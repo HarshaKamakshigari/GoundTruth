@@ -6,11 +6,9 @@ Store: Starbucks SRM Coffee Point
 import os
 import re
 import json
-import math
-from typing import Optional, List, Dict
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from typing import List, Dict
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -21,11 +19,17 @@ from pypdf import PdfReader
 from geopy.distance import geodesic
 import google.generativeai as genai
 
-load_dotenv()
+# -------------------------------------------------------------------------
+# ENV LOADING (FORCE LOAD .env)
+# -------------------------------------------------------------------------
+load_dotenv(dotenv_path=".env", override=True)
 
-# -----------------------------
-# CONSTANTS (ONE STORE)
-# -----------------------------
+API_KEY = os.getenv("GEMINI_API_KEY")
+print("DEBUG: Loaded Gemini key →", API_KEY)  # MUST show your key
+
+# -------------------------------------------------------------------------
+# CONSTANTS
+# -------------------------------------------------------------------------
 STORE_FILE = "data/store.json"
 STATUS_FILE = "data/store_status.json"
 PROFILE_FILE = "data/profile.txt"
@@ -35,54 +39,51 @@ CHUNKS_FILE = "rag/chunks.json"
 EMBED_MODEL_NAME = "all-MiniLM-L6-v2"
 EMBED_DIM = 384
 
-# -----------------------------
-# Load store info
-# -----------------------------
-store = json.load(open(STORE_FILE, "r"))
-store_status = json.load(open(STATUS_FILE, "r"))
-
 os.makedirs("rag", exist_ok=True)
 
-# -----------------------------
-# FastAPI & CORS
-# -----------------------------
-app = FastAPI(title="One Store Support Agent")
+# -------------------------------------------------------------------------
+# LOAD STORE DATA
+# -------------------------------------------------------------------------
+store = json.load(open(STORE_FILE))
+store_status = json.load(open(STATUS_FILE))
+
+# -------------------------------------------------------------------------
+# APP
+# -------------------------------------------------------------------------
+app = FastAPI(title="Starbucks SRM AI Agent")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_headers=["*"],
     allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# -----------------------------
-# Conversation Memory
-# -----------------------------
+# -------------------------------------------------------------------------
+# MEMORY
+# -------------------------------------------------------------------------
 memory_db: Dict[str, List[Dict[str, str]]] = {}
 
-def save_memory(user: str, role: str, text: str):
-    mem = memory_db.setdefault(user, [])
-    mem.append({"role": role, "text": text})
+def save_memory(uid, role, msg):
+    mem = memory_db.setdefault(uid, [])
+    mem.append({"role": role, "msg": msg})
     if len(mem) > 10:
-        memory_db[user] = mem[-10:]
+        mem.pop(0)
 
-def memory_to_text(user: str):
-    mem = memory_db.get(user, [])
-    text = ""
-    for m in mem:
-        text += f"{m['role'].upper()}: {m['text']}\n"
-    return text
+def get_memory(uid):
+    return "\n".join([f"{m['role'].upper()}: {m['msg']}" for m in memory_db.get(uid, [])])
 
-# -----------------------------
-# Privacy Masking
-# -----------------------------
-def mask(text: str):
+# -------------------------------------------------------------------------
+# MASKING
+# -------------------------------------------------------------------------
+def mask(text):
     text = re.sub(r"\b\d{10}\b", "[PHONE_MASKED]", text)
-    text = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z]+\.[A-Za-z]+", "[EMAIL_MASKED]", text)
+    text = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z-]+\.[A-Za-z]+", "[EMAIL_MASKED]", text)
     return text
 
-# -----------------------------
-# RAG Build
-# -----------------------------
+# -------------------------------------------------------------------------
+# RAG
+# -------------------------------------------------------------------------
 embed_model = None
 
 def get_embed():
@@ -91,8 +92,8 @@ def get_embed():
         embed_model = SentenceTransformer(EMBED_MODEL_NAME)
     return embed_model
 
-def chunk_text(text: str, size=350, overlap=30):
-    words = text.split()
+def chunk_text(txt, size=350, overlap=40):
+    words = txt.split()
     chunks = []
     i = 0
     while i < len(words):
@@ -100,42 +101,32 @@ def chunk_text(text: str, size=350, overlap=30):
         i += size - overlap
     return chunks
 
-def build_rag(text: str):
-    chunks = chunk_text(text)
+def build_rag(txt):
+    chunks = chunk_text(txt)
     model = get_embed()
-    emb = model.encode(chunks, convert_to_numpy=True)
+    emb = model.encode(chunks)
+    emb = np.array(emb).astype("float32")
     index = faiss.IndexFlatL2(EMBED_DIM)
-    index.add(emb.astype("float32"))
+    index.add(emb)
     faiss.write_index(index, INDEX_FILE)
     json.dump(chunks, open(CHUNKS_FILE, "w"))
     return len(chunks)
 
-def rag_search(query: str, k=3):
+def rag_search(query, k=3):
     if not os.path.exists(INDEX_FILE):
         return []
     index = faiss.read_index(INDEX_FILE)
-    chunks = json.load(open(CHUNKS_FILE, "r"))
-    model = get_embed()
-    q_emb = model.encode([query], convert_to_numpy=True)
-    D, I = index.search(q_emb.astype("float32"), k)
-    return [chunks[i] for i in I[0]]
+    chunks = json.load(open(CHUNKS_FILE))
+    q_emb = get_embed().encode([query]).astype("float32")
+    D, I = index.search(q_emb, k)
+    return [chunks[i] for i in I[0] if i < len(chunks)]
 
-# -----------------------------
-# Distance Calculation
-# -----------------------------
-def calculate_distance(lat, lon):
-    try:
-        return int(geodesic((lat, lon), (store["lat"], store["lon"])).meters)
-    except:
-        return None
-
-# -----------------------------
-# Gemini Integration
-# -----------------------------
-API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-
+# -------------------------------------------------------------------------
+# GEMINI
+# -------------------------------------------------------------------------
 def gemini(prompt):
     if not API_KEY:
+        print("ERROR: No Gemini API key found.")
         return None
     try:
         genai.configure(api_key=API_KEY)
@@ -143,12 +134,12 @@ def gemini(prompt):
         out = model.generate_content(prompt)
         return out.text
     except Exception as e:
-        print("Gemini error:", e)
+        print("Gemini Error:", e)
         return None
 
-# -----------------------------
-# API Models
-# -----------------------------
+# -------------------------------------------------------------------------
+# MODELS
+# -------------------------------------------------------------------------
 class ChatReq(BaseModel):
     message: str
     user_id: str = "user"
@@ -161,95 +152,84 @@ class ChatRes(BaseModel):
     personalized: bool
     features_used: list
 
-# -----------------------------
-# Routes
-# -----------------------------
-@app.get("/")
-def root():
-    return {"msg": "One Store Support Bot Running"}
-
+# -------------------------------------------------------------------------
+# ROUTES
+# -------------------------------------------------------------------------
 @app.post("/api/upload_profile")
 async def upload_profile(file: UploadFile = File(...)):
-    """
-    Upload a customer PDF or TXT and rebuild RAG.
-    """
-    filename = file.filename.lower()
-    if filename.endswith(".pdf"):
+    name = file.filename.lower()
+    if name.endswith(".pdf"):
         pdf = PdfReader(file.file)
-        text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+        text = "\n".join([p.extract_text() or "" for p in pdf.pages])
     else:
         text = (await file.read()).decode()
 
     open(PROFILE_FILE, "w").write(text)
-    chunks = build_rag(text)
-    return {"indexed_chunks": chunks}
+    count = build_rag(text)
+    return {"indexed_chunks": count}
 
 @app.post("/api/chat", response_model=ChatRes)
-async def chat(req: ChatReq):
-    user_msg = mask(req.message)
-    save_memory(req.user_id, "user", user_msg)
+def chat(req: ChatReq):
+    msg = mask(req.message)
+    save_memory(req.user_id, "user", msg)
 
-    # RAG
-    rag_ctx = rag_search(user_msg)
+    rag = rag_search(msg)
 
-    # Distance
-    dist = calculate_distance(req.lat, req.lon)
+    # distance
+    try:
+        dist = int(geodesic((req.lat, req.lon), (store["lat"], store["lon"])).meters)
+    except:
+        dist = 0
 
-    # Store status
-    inv = store_status.get("inventory", {})
-    open_now = store_status.get("open_now", True)
+    inv = store_status["inventory"]
+    is_open = store_status["open_now"]
 
-    # RAG + memory + store fused prompt
     prompt = f"""
-User: {user_msg}
+USER MESSAGE:
+{msg}
 
-Store: {store['name']}
-Address: {store['address']}
+STORE INFO:
+Name: {store['name']}
 Distance: {dist} meters
 Offer: {store['offer']}
-Open now: {open_now}
+Open: {is_open}
+Inventory: {inv}
 
-Inventory: {json.dumps(inv)}
+RAG PROFILE:
+{rag}
 
-RAG Context:
-{rag_ctx}
+CONVERSATION MEMORY:
+{get_memory(req.user_id)}
 
-Conversation Memory:
-{memory_to_text(req.user_id)}
-
-Task:
-- Reply warmly, use customer personalization from RAG.
-- If they are cold → recommend Hot Cocoa.
-- If they ask about stock → check inventory.
-- Keep reply short and friendly.
+TASK:
+Reply like a friendly Starbucks barista.
+Use store details + inventory + profile context.
+Max 2–3 sentences.
 """
 
-    # Gemini or fallback
-    reply = gemini(prompt)
-    if not reply:
-        # Fallback logic
-        if "cold" in user_msg.lower():
-            reply = f"You’re {dist}m away from Starbucks SRM Coffee Point! Come inside — we have Hot Cocoa and your 10% coupon applies."
-        else:
-            reply = f"The Starbucks SRM Coffee Point is {dist}m away. Offer: {store['offer']}."
+    ans = gemini(prompt)
 
-    save_memory(req.user_id, "assistant", reply)
+    if not ans:
+        ans = f"Starbucks SRM Coffee Point is {dist}m away. {store['offer']}."
+
+    save_memory(req.user_id, "assistant", ans)
 
     return ChatRes(
-        reply=reply,
+        reply=ans,
         personalized=True,
+        features_used=["Gemini", "RAG", "Inventory", "Location"],
         store_info={
             "name": store["name"],
             "distance": dist,
-            "open_now": open_now,
+            "offer": store["offer"],
+            "open_now": is_open,
             "inventory": inv
-        },
-        features_used=["RAG", "Location", "Gemini", "Inventory"]
+        }
     )
 
-# -----------------------------
-# Run
-# -----------------------------
+# -------------------------------------------------------------------------
+# NO UVICORN INSIDE FILE (avoids Windows issues)
+# -------------------------------------------------------------------------
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    print("Run the server using:")
+    print("uvicorn app:app --host 0.0.0.0 --port 8000")
