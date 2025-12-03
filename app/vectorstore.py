@@ -1,20 +1,40 @@
+from typing import List, Tuple
+import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
-import numpy as np
+
 
 class VectorStore:
-    def __init__(self):
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+    def _init_(self, model_name: str = "all-MiniLM-L6-v2"):
+        self.model = SentenceTransformer(model_name)
+        # 384 is the embedding size for all-MiniLM-L6-v2
         self.index = faiss.IndexFlatL2(384)
-        self.texts = []
+        self.texts: List[str] = []
+        self.metadatas: List[dict] = []
 
-    def add_texts(self, texts):
-        embeddings = self.model.encode(texts)
-        self.index.add(np.array(embeddings))
+    def add_texts(self, texts: List[str], metadatas: List[dict]):
+        if not texts:
+            return
+
+        embeddings = self.model.encode(texts, convert_to_numpy=True)
+        if len(self.texts) == 0:
+            self.index.add(embeddings)
+        else:
+            self.index.add(embeddings)
+
         self.texts.extend(texts)
+        self.metadatas.extend(metadatas)
 
-    def search(self, query, k=3):
-        q_emb = self.model.encode([query])
-        distances, ids = self.index.search(np.array(q_emb), k)
-        results = [self.texts[i] for i in ids[0]]
+    def search(self, query: str, k: int = 5) -> List[Tuple[str, dict]]:
+        if len(self.texts) == 0:
+            return []
+
+        q_emb = self.model.encode([query], convert_to_numpy=True)
+        distances, ids = self.index.search(q_emb, min(k, len(self.texts)))
+
+        results = []
+        for idx in ids[0]:
+            text = self.texts[idx]
+            meta = self.metadatas[idx]
+            results.append((text, meta))
         return results
