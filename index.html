@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RAG Query UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        textarea, input {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>RAG Query Interface</h2>
+
+    <label>Question:</label>
+    <textarea id="question" rows="3">I'm cold and waiting for my flight. What can I get?</textarea>
+
+    <label>User ID:</label>
+    <input id="user_id" value="U1005">
+
+    <label>Store ID:</label>
+    <input id="store_id" value="SB003">
+
+    <button onclick="sendRequest()">Submit</button>
+
+    <h3>Response:</h3>
+    <pre id="responseBox">Waiting for response...</pre>
+
+<script>
+async function sendRequest() {
+    const question = document.getElementById("question").value;
+    const user_id = document.getElementById("user_id").value;
+    const store_id = document.getElementById("store_id").value;
+
+    const body = {
+        question,
+        user_id,
+        store_id
+    };
+
+    document.getElementById("responseBox").textContent = "Loading...";
+
+    try {
+        const res = await fetch("http://127.0.0.1:8000/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        document.getElementById("responseBox").textContent = JSON.stringify(data, null, 2);
+
+    } catch (err) {
+        document.getElementById("responseBox").textContent = "Error: " + err.message;
+    }
+}
+</script>
+
+</body>
+</html>
