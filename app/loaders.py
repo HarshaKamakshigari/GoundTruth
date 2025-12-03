@@ -3,18 +3,8 @@ from typing import List, Dict
 
 
 def _split_sections(text: str, marker: str) -> List[Dict]:
-    """
-    Split the markdown by a marker like '### Store' or '### User',
-    regardless of whether it's on a new line or in the middle of a line.
-    """
-    # Ensure consistent newlines
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-
-    # Add a newline before every marker so splitting is easier
-    # e.g. "## ... ### Store 1" -> "## ... \n### Store 1"
     text = text.replace(marker, f"\n{marker}")
-
-    # Now split on the marker, keeping the marker via lookahead
     parts = re.split(rf"(?={marker})", text)
 
     sections: List[Dict] = []
@@ -24,9 +14,9 @@ def _split_sections(text: str, marker: str) -> List[Dict]:
             continue
 
         lines = part.splitlines()
-        title_line = lines[0]               # e.g. "### Store 1"
+        title_line = lines[0]                   
         title = title_line.lstrip("# ").strip()
-        body = "\n".join(lines[1:]).strip() # rest of the block
+        body = "\n".join(lines[1:]).strip()     
 
         sections.append({"title": title, "text": body})
 

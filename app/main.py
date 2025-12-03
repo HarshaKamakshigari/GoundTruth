@@ -17,20 +17,12 @@ class AskRequest(BaseModel):
 
 @app.on_event("startup")
 def startup_event():
-    # Load markdown and build the vector index once
     rag.load_data()
 
 
 @app.post("/ask")
 def ask(req: AskRequest):
-    """
-    Input example:
-    {
-      "question": "I'm cold and waiting for my flight",
-      "user_id": "U1005",
-      "store_id": "SB003"
-    }
-    """
+    
     context = rag.build_context(
         req.question,
         user_id=req.user_id,

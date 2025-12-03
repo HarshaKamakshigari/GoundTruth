@@ -10,18 +10,11 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError("❌ GEMINI_API_KEY not found in .env file")
 
-# Configure Gemini client
 genai.configure(api_key=API_KEY)
-
-# Initialize the model once
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 
 def generate_answer(question: str, context: str) -> str:
-    """
-    Uses Gemini 2.5 Flash to generate a clean, conversational answer
-    based on retrieved RAG context.
-    """
 
     prompt = f"""
 You are a hyper-personalized customer support agent for Starbucks.

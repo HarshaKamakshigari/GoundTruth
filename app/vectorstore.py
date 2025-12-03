@@ -7,7 +7,6 @@ from sentence_transformers import SentenceTransformer
 class VectorStore:
     def _init_(self, model_name: str = "all-MiniLM-L6-v2"):
         self.model = SentenceTransformer(model_name)
-        # 384 is the embedding size for all-MiniLM-L6-v2
         self.index = faiss.IndexFlatL2(384)
         self.texts: List[str] = []
         self.metadatas: List[dict] = []
