@@ -1,0 +1,35 @@
+{
+  "harsha": {
+    "name": "Harsha Kamakshigari",
+    "favorite_drinks": ["Latte", "Hot Cocoa"],
+    "coupons": ["WELCOME10 - 10% Off Any Drink"],
+    "loyalty_status": "Gold",
+    "last_order": "Iced Latte",
+    "preferences": {
+      "temperature": "Hot drinks when cold",
+      "sweetness": "Medium"
+    }
+  },
+  "alex": {
+    "name": "Alex Johnson",
+    "favorite_drinks": ["Cappuccino"],
+    "coupons": ["CAPPU20 - 20% off Cappuccino"],
+    "loyalty_status": "Platinum",
+    "last_order": "Cappuccino",
+    "preferences": {
+      "temperature": "Hot drinks only",
+      "sweetness": "Low"
+    }
+  },
+  "demo": {
+    "name": "Demo User",
+    "favorite_drinks": ["Espresso"],
+    "coupons": [],
+    "loyalty_status": "Standard",
+    "last_order": "",
+    "preferences": {
+      "temperature": "Any",
+      "sweetness": "High"
+    }
+  }
+}
