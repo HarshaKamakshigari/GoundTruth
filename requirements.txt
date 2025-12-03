@@ -1,11 +1,7 @@
 ﻿fastapi
-uvicorn[standard]
-python-dotenv
-google-generativeai
-pypdf
+uvicorn
 sentence-transformers
 faiss-cpu
+markdown
+pydantic
 numpy
-typing-extensions
-python-multipart
-geopy

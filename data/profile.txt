@@ -1,7 +1,0 @@
-Customer: Alex Johnson
-Loyalty: Platinum
-Favorite Drink: Hot Cocoa
-Order history: Hot Cocoa, Latte, Cappuccino
-Coupon: HOTCOCOA10 valid for 10% off Hot Cocoa
-Preferences: Loves warm beverages when cold, dislikes overly sweet drinks
-Last visit: Starbucks SRM Coffee Point, two days ago
