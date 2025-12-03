@@ -1,5 +1,3 @@
-# 🚀 **One-Store Hyper-Personalized Customer Support Agent**
-
 ### *AI-powered assistant for Starbucks SRM Coffee Point — with RAG, location awareness, customer memory & privacy masking.*
 
 ---
@@ -34,9 +32,8 @@ This bot understands:
 * Customer **profile RAG** (PDF/TXT ingestion)
 * **Store inventory**
 * **Store timing**
-* Distance based on **user’s live GPS**
 * Privacy-masked messages (phones/emails hidden)
-* AI replies powered by **Gemini 1.5 Flash**
+* AI replies powered by **Gemini 2.5 Flash**
 
 ---
 
@@ -44,8 +41,7 @@ This bot understands:
 
 ```
 User → FastAPI → Privacy Layer → RAG Engine (FAISS)
-     → Store Status → Location Distance
-     → Gemini 1.5 Flash → Final Personalized Response
+     → Store Status → Gemini 1.5 Flash → Final Personalized Response
 ```
 
 ### **Core Features**
@@ -53,11 +49,10 @@ User → FastAPI → Privacy Layer → RAG Engine (FAISS)
 | Feature                        | Description                                        |
 | ------------------------------ | -------------------------------------------------- |
 | 📌 **RAG on Customer Profile** | Upload PDF/TXT → chunks → embeddings → FAISS index |
-| 📍 **Location Awareness**      | Computes distance between user GPS and store       |
 | 🛍️ **Live Inventory Lookup**  | “Do you have Hot Cocoa?” → checks JSON inventory   |
 | 🧠 **Conversation Memory**     | AI remembers last 10 messages                      |
 | 🔒 **Privacy Masking**         | Removes phone numbers/emails before sending to LLM |
-| 🤖 **Gemini 1.5 Flash**        | Final personalized response generator              |
+| 🤖 **Gemini 2.5 Flash**        | Final personalized response generator              |
 
 ---
 
@@ -69,10 +64,9 @@ User → FastAPI → Privacy Layer → RAG Engine (FAISS)
 | AI Model       | Google Gemini 1.5 Flash      |
 | RAG            | SentenceTransformers + FAISS |
 | Embeddings     | all-MiniLM-L6-v2             |
-| Location       | geopy                        |
 | PDF Processing | PyPDF                        |
 | Environment    | Python 3.11                  |
-| Frontend       | HTML + Tailwind (optional)   |
+| Frontend       | HTML + Tailwind CSS          |
 
 ---
 
@@ -81,8 +75,8 @@ User → FastAPI → Privacy Layer → RAG Engine (FAISS)
 ### **1️⃣ Clone the Repository**
 
 ```bash
-git clone https://github.com/yourusername/hyper-personalized-agent.git
-cd hyper-personalized-agent
+git clone https://github.com/HarshaKamakshigari/GoundTruth.git
+cd GoundTruth
 ```
 
 ### **2️⃣ Install Dependencies**
@@ -115,12 +109,12 @@ DEBUG: Loaded Gemini key → AIzaSy...
 
 ## 🧪 6. **How It Works (Step-by-Step)**
 
-### 📝 Step 1 — Upload customer profile (optional)
+### 📝 Step 1 — Upload customer profile
 
 Send a PDF or text file:
 
 ```
-POST /api/upload_profile
+IN the data Folder
 ```
 
 RAG index is created automatically.
@@ -192,7 +186,7 @@ The system combines:
 * Conversation memory
 * RAG customer data
 
-Then sends a structured prompt to **Gemini 1.5 Flash**, generating a **warm, barista-style** response.
+Then sends a structured prompt to **Gemini 2.5 Flash**, generating a **warm, barista-style** response.
 
 ---
 
@@ -212,10 +206,9 @@ Before sending input to Gemini:
 * Real store problem
 * Real customer experience improvement
 * Uses RAG
-* Uses location context
 * Uses personalization
 * Uses AI but also has **traditional ML components (FAISS)**
-* Edge-case handling: open/close, inventory, distance
+* Edge-case handling: open/close, inventory
 * Fully deployable
 
 ---
