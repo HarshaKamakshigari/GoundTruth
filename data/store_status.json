@@ -1,0 +1,9 @@
+{
+  "open_now": true,
+  "inventory": {
+    "Hot Cocoa": 42,
+    "Latte": 15,
+    "Cold Coffee": 8,
+    "Croissant": 0
+  }
+}

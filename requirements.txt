@@ -1,0 +1,11 @@
+﻿fastapi
+uvicorn[standard]
+python-dotenv
+google-generativeai
+pypdf
+sentence-transformers
+faiss-cpu
+numpy
+typing-extensions
+python-multipart
+geopy

@@ -1,0 +1,18 @@
+﻿CUSTOMER PROFILE
+Customer ID: CUST_001
+Name: Alex Johnson
+Phone: 555-0123
+Email: alex.j@email.com
+Loyalty Member: Platinum
+Favorite Drink: Hot Cocoa
+Last Order: Hot Cocoa with whipped cream
+Past Orders: Hot Cocoa (5x), Latte (3x), Cappuccino (2x)
+Active Coupons: HOTCOCOA10 (10% off Hot Cocoa)
+Average Visit: 3 times per week
+Preference: Extra hot, no sugar
+Complaints: None
+Loyalty Points: 1250 points
+Birthday: December 15th
+Allergies: None
+Payment Method: Card ending in 4321
+Preferred Store: Starbucks on Coffee Street
